@@ -2,8 +2,9 @@
 title: "POEM Statistical Services Report"
 author: ""
 date: "{{{ report_month }}} {{{ report_year }}}"
-output: pdf_document:
-  latex_engine: xelatex
+output: 
+  pdf_document:
+    latex_engine: xelatex
 mainfont: Arial
 ---
 
@@ -23,7 +24,7 @@ knitr::opts_chunk$set(
 ```
 
 
-```{r}, load_data}
+```{r, load_data}
 library(kableExtra)
 library(knitr)
 library(lubridate)
@@ -35,13 +36,15 @@ theme_set(theme_bw())
 #Read in the data to be analyzed
 work <-
   readRDS(
-    here(
+    here::here(
       "reports",
       "{{{ report_year }}}",
       "{{{ report_month }}}",
       "delays_{{{ report_month }}}_{{{ report_year }}}_clean.rds"
     )
   )
+
+current.year<- as.numeric({{{ report_year }}})
 ```
 
 # Service Usage
@@ -148,7 +151,7 @@ demand %>%
   ggplot(aes(Time,n))+
   geom_col(fill = 'light gray', color = 'black')+
   scale_y_continuous(limits = c(0,NA))+
-  scale_x_date(date_breaks = '3 months', date_labels = '%Y/%m/%d')+
+  scale_x_date(date_breaks = '3 months', date_labels = '%Y/%m')+
   theme(aspect.ratio = 1/1.61)+
   labs(x = 'Date', y = 'Requests in Month')+
   theme(plot.margin=unit(c(1,1,1,1),"cm"))
