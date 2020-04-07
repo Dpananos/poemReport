@@ -7,11 +7,11 @@
 #' @param render Should the report be rendered automatically? Defaults to `FALSE`
 #'
 #' @export
-delays_report <- function(report_month, report_year, render = FALSE){
+poem_report <- function(report_month, report_year, render = FALSE){
   report_path <- fs::path("reports", report_year, report_month)
   
-  usethis::use_template(template = "delays_report.Rmd",
-                        save_as = paste0(report_path, "/03-delays_report.Rmd"),
+  usethis::use_template(template = "poem_report.Rmd",
+                        save_as = paste0(report_path, "/03-poem_report.Rmd"),
                         data = list(report_month = report_month,
                                     report_year = report_year),
                         package = "poemReport",
@@ -21,7 +21,7 @@ delays_report <- function(report_month, report_year, render = FALSE){
     out_path <- paste0(report_path, "/", report_month, " ", report_year, " ",
                        "report.pdf")
     
-    rmarkdown::render(input = paste0(report_path, "/03-delays_report.Rmd"),
+    rmarkdown::render(input = paste0(report_path, "/03-poem_report.Rmd"),
                       output_file = paste(report_month, report_year, "report.pdf"),
                       quiet = TRUE)
     
