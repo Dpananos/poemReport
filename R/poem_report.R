@@ -19,10 +19,10 @@ poem_report <- function(report_month, report_year, render = FALSE){
   
   if(render){
     out_path <- paste0(report_path, "/", report_month, " ", report_year, " ",
-                       "report.pdf")
+                       "poem.pdf")
     
     rmarkdown::render(input = paste0(report_path, "/03-poem_report.Rmd"),
-                      output_file = paste(report_month, report_year, "report.pdf"),
+                      output_file = paste(report_month, report_year, "poem.pdf"),
                       quiet = TRUE)
     
     usethis::ui_done("Report saved to {usethis::ui_path(out_path)}")
