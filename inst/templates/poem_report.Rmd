@@ -1,0 +1,310 @@
+---
+title: "POEM Statistical Services Report"
+author: ""
+date: "{{{ report_month }}} {{{ report_year }}}"
+output: pdf_document:
+  latex_engine: xelatex
+mainfont: Arial
+---
+
+
+```{r, include=F}
+#These are some options for rendering to word
+knitr::opts_chunk$set(
+  echo = F, #Do not print the code
+  message = F, #Do not show error messages
+  warning = F, #Do not show warnings
+  fig.height = 3, #Height of images in inches
+  fig.width = 5, #Width of images in inches
+  fig.align = 'center', #Center the images
+  dpi = 400, #Image quality
+  cache = F #Cache computations from previous renders
+)
+```
+
+
+```{r}, load_data}
+library(kableExtra)
+library(knitr)
+library(lubridate)
+library(stringr)
+library(tidyverse)
+
+theme_set(theme_bw())
+
+#Read in the data to be analyzed
+work <-
+  readRDS(
+    here(
+      "reports",
+      "{{{ report_year }}}",
+      "{{{ report_month }}}",
+      "delays_{{{ report_month }}}_{{{ report_year }}}_clean.rds"
+    )
+  )
+```
+
+# Service Usage
+
+```{r, service_access_count}
+#How many times were we asked for service
+#Equivalent to asking: how many unique projects are there?
+#Unique request determined byh combination of Name, type, and ID
+num_access_serv = work %>%
+  arrange(WorkDate) %>%
+  distinct(Name, type, ID) %>%
+  group_by(type) %>%
+  summarise(n = n())
+
+#How many unique people made these requests
+num_unique_memb = work %>% distinct(Name) %>% nrow()
+```
+
+```{r, hours_used}
+#Summarize how many hours were used per member
+#Roll up to determine usage by year
+work_hrs_crrnt_yr <- work %>%
+  mutate(Year = year(WorkDate)) %>%
+  group_by(Name, type, Year) %>%
+  summarise(hrs = sum(WorkHrs)) %>%
+  filter(Year == current.year) %>%
+  ungroup
+
+#Summary of work hours is given on a per member basis
+#For instance, must report the median number of hours used per member.
+smmry_wrk_hrs <- work_hrs_crrnt_yr %>%
+  summarise(min = min(hrs),
+            max = max(hrs),
+            med = median(hrs))
+```
+
+
+```{r, grant_reviews}
+#Count how many grant reviews we did for each agency
+#Need to break up the GrantAgency Column since it may contain multiple grant agencies
+#Count up AMOSO and CIHR.  Everything else is under OTHER
+grt_rvw_cnt <- work %>%
+  filter(type == 'GRANT') %>%
+  arrange(WorkDate) %>%
+  distinct(Name, ID, type, .keep_all = T) %>%
+  transmute(agency = str_split(GrantAgency, ';')) %>%
+  mutate(cihr = map_int(agency, ~ any(c('CIHR') %in% .x)),
+         amoso = map_int(agency, ~ any(c('AMOSO') %in% .x)),
+  ) %>%
+  summarise_at(vars(cihr, amoso), function(x) sum(x, na.rm = T))
+ 
+```
+
+* A total of `r sum(num_access_serv$n)` requests for service have been made since the services inception.  This includes requests for statistical services as well as grant reviews. These requests have been made by  `r num_unique_memb` unique POEM members.
+
+* A total of `r sum(work_hrs_crrnt_yr$hrs)` hours have been used per DOM member in `r current.year` (median `r smmry_wrk_hrs$med` hours per DOM faculty member ), with the number of hours used ranging from `r smmry_wrk_hrs$min` to `r smmry_wrk_hrs$max` per project.
+
+* `r grt_rvw_cnt$cihr` CIHR review(s) have been conducted. `r grt_rvw_cnt$amoso` AMOSO grant review(s) have been conducted. 
+
+# Requested Services
+
+Shown below is a table of requested services and the proportion of projects which required the service.  Note that the proportions do not sum to 100% because some projects require multiple services (note, service began July 2018).
+
+
+```{r, work_request_summary }
+
+work_rqst<-work %>% 
+  mutate(Year = year(WorkDate)) %>% 
+  arrange(WorkDate) %>% 
+  distinct(Name, type, ID, .keep_all = T) %>% 
+  mutate(work_request = str_split(WorkRequested,';')) %>% 
+  unnest() %>% 
+  mutate(work_request = str_to_title(work_request),
+         work_request = str_trim(work_request)) %>% 
+  group_by(Year, work_request) %>% 
+  summarise(n = n()) %>% 
+  mutate(freq = n/sum(n)) %>% 
+  select(-n) %>% 
+  mutate(freq = scales::percent(freq)) %>% 
+  spread(Year, freq, fill = '0%')
+  
+#make table
+kable(work_rqst, format = 'latex', align = c('r','c','c')) %>% 
+  kable_styling(latex_options = c('striped', 'hold_position'))
+  
+```
+
+# Service Demand
+
+Shown below is a plot of service demand since service has been introduced.  Service is expected to fluctuate as various deadlines approach.
+
+```{r}
+demand <- 
+  work %>% 
+  arrange(WorkDate) %>% 
+  distinct(Name, ID, type, .keep_all = T) %>% 
+  mutate(Time = date(floor_date(WorkDate, 'month'))) %>%  
+  drop_na(Time) %>% 
+  count(Time) %>% 
+  complete(Time = seq.Date(min(Time),max(Time), by = 'month')) %>% 
+  replace_na(list(n=0))
+
+demand %>% 
+  ggplot(aes(Time,n))+
+  geom_col(fill = 'light gray', color = 'black')+
+  scale_y_continuous(limits = c(0,NA))+
+  scale_x_date(date_breaks = '3 months', date_labels = '%Y/%m/%d')+
+  theme(aspect.ratio = 1/1.61)+
+  labs(x = 'Date', y = 'Requests in Month')+
+  theme(plot.margin=unit(c(1,1,1,1),"cm"))
+```
+
+  
+# Service Adoption
+
+```{r, unique_members}
+
+growth <-
+  work %>%
+  arrange(WorkDate) %>%
+  distinct(Name, .keep_all = T) %>%
+  mutate(qtr = stringr::str_c(year(WorkDate), '-Q', quarter(WorkDate)),
+         QTR = factor(qtr)) %>%
+  group_by(QTR) %>%
+  summarise(n = n_distinct(Name)) %>%
+  ungroup %>%
+  mutate(n = cumsum(n))
+
+
+growth.rate <- mean(diff(growth$n))
+
+```
+
+New clients adopting the service is an important metric to monitor.  Shown below is a plot of total unique members over time.  To date, the service has seen an adoption rate of `r growth.rate` DOM members per quarter.  That is to say `r growth.rate` DOM members use the service for the first time per quarter on average.
+
+```{r, service_growth}
+
+growth %>%
+  ggplot(aes(QTR, n)) +
+  geom_col(fill = 'light gray', color = 'black') +
+  geom_label(aes(label = n)) +
+  theme(aspect.ratio = 1) +
+  labs(x = 'Year', y = 'Cumulative DOM Members\nUsing Service')
+```
+
+
+
+# Clients By Department
+## Including SAS requests, Grant Reviews, and Stats Related REB Protocol Reviews Since Program Inception
+
+
+```{r}
+#Create table for division counts stratified by DOM LEVEL
+division.requests <- 
+  work %>%
+  filter(type == 'SAS') %>%
+  arrange(WorkDate) %>%
+  distinct(Name, ID, .keep_all = T) %>%
+  select(Division, DOMLevel) %>%
+  group_by(Division, DOMLevel) %>%
+  count() %>%
+  replace_na(list(DOMLevel = 'Not Listed')) %>%
+  ungroup
+
+#Tack on how many trainees were added
+trainees <- 
+  work %>%
+  filter(type == 'SAS') %>%
+  arrange(WorkDate) %>%
+  distinct(Name, ID, .keep_all = T) %>%
+  select(Division, Collaborator) %>%
+  mutate(collab_list = map_int(stringr::str_split(Collaborator, ';'), length)) %>%
+  group_by(Division) %>%
+  summarise(Trainees = sum(collab_list)) %>%
+  ungroup
+
+
+division.requests.table <- 
+  division.requests %>%
+  spread(DOMLevel, n) %>%
+  replace_na(list(
+    JR = 0,
+    SR = 0,
+    MID = 0,
+    `Not Listed` = 0
+  )) %>%
+  mutate(SAS = JR + SR + MID + `Not Listed`) %>%
+  arrange(desc(SAS)) %>%
+  select(Division, SAS, JR, MID, SR, `Not Listed`) %>%
+  left_join(trainees) %>%
+  replace_na(list(trainees = 0))
+
+requests.total <- 
+  division.requests.table %>%
+  select(-Division) %>%
+  summarise_all(list(sum)) %>%
+  mutate(Division = 'Total')
+
+division.requests.table %>%
+  bind_rows(requests.total) %>%
+  kable(format = 'latex', align = c('r', 'c', 'c', 'c', 'c'))  %>%
+  kable_styling(latex_options = c('striped', 'hold_position'))
+```
+
+
+
+```{r}
+repeat.clients <-
+  work %>%
+  distinct(Name, ID, type, .keep_all = T) %>%
+  group_by(Name, DOMLevel) %>%
+  count() %>%
+  arrange(desc(n)) %>%
+  filter(n > 1)
+
+num.mids <- filter(repeat.clients, DOMLevel == 'MID') %>% nrow
+num.jr <- filter(repeat.clients, DOMLevel == 'JR') %>% nrow
+num.sr <- filter(repeat.clients, DOMLevel == 'SR') %>% nrow
+
+num.residents <- 
+  work %>%
+  distinct(Name, ID, .keep_all = T) %>%
+  drop_na(PGYNom) %>%
+  mutate(pgy = map_int(stringr::str_split(PGYNom, ';'), length)) %>%
+  summarise(pgy = sum(pgy))
+
+
+```
+
+We have had `r nrow(repeat.clients)` repeat client(s) (`r num.jr` JR, `r num.mids` MID, `r num.sr` SR) in `r as.integer(current.year)`.  A new SAS form is not required for continuing work on the same study.  We encourage trainees -- post docs, RA/RC -- to attend stats meetings.  A total of `r num.residents$pgy` resident projects were helped by statistical services.
+
+
+## Grant Reviews Since Program Inception
+
+```{r}
+grant.reviews <- 
+  work %>%
+  filter(type == 'GRANT') %>%
+  arrange(WorkDate) %>%
+  distinct(type, ID, .keep_all = T) %>%
+  select(Division, DOMLevel, GrantAgency) %>%
+  replace_na(list(DOMLevel = 'Not Listed')) %>%
+  mutate(Agency = stringr::str_split(GrantAgency, ';')) %>%
+  unnest %>%
+  mutate(Agency = if_else(Agency %in% c('AMOSO', 'CIHR'), Agency, 'OTHER')) %>%
+  group_by(Division, DOMLevel, Agency) %>%
+  count() %>%
+  spread(DOMLevel, n, fill = 0) %>%
+  replace_na(list(JR = 0, SR = 0, MID = 0)) %>%
+  ungroup
+
+grant.totals <- 
+  grant.reviews %>%
+  select(-Division) %>%
+  group_by(Agency) %>%
+  summarise_all(list(sum)) %>%
+  mutate(Division = 'Total')
+
+
+
+grant.reviews %>%
+  bind_rows(grant.totals) %>%
+  select(Division, Agency, JR, MID, SR) %>%
+  kable(format = 'latex', align = c('r', 'r', 'c', 'c', 'c')) %>%
+  kable_styling(latex_options = c('striped', 'hold_position'))
+```
