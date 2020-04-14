@@ -33,11 +33,10 @@ This will open a `.R` file which looks like
 
 
 poemReport::data_cleaning(report_month = "May", report_year = "2020")
-#> ✓ Setting active project to '/Users/demetri/The University of Western Ontario/Susan Dimitry - Stats Analyst Service/poemReport'
+
 
 poemReport::poem_report(report_month = "May", report_year = "2020", render = FALSE)
-#> ✓ Writing 'reports/2020/May/03-poem_report.Rmd'
-#> ● Edit 'reports/2020/May/03-poem_report.Rmd'
+
 ```
 
 Running `poemReport::data_cleaning(report_month = "May", report_year =
