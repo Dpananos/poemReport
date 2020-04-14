@@ -111,6 +111,7 @@ Shown below is a table of requested services and the proportion of projects whic
 
 ```{r, work_request_summary }
 
+
 work_rqst<-work %>% 
   mutate(Year = year(WorkDate)) %>% 
   arrange(WorkDate) %>% 
@@ -124,11 +125,16 @@ work_rqst<-work %>%
   mutate(freq = n/sum(n)) %>% 
   select(-n) %>% 
   mutate(freq = scales::percent(freq)) %>% 
-  spread(Year, freq, fill = '0%')
+  spread(Year, freq, fill = '0%') %>% 
+  rename(`Work Request` = work_request)
   
 #make table
-kable(work_rqst, format = 'latex', align = c('r','c','c')) %>% 
-  kable_styling(latex_options = c('striped', 'hold_position'))
+kable(work_rqst, 
+      format = 'latex', 
+      align = rep('r', ncol(work_rqst)),
+      booktabs = T,
+      caption = 'Proportion of requests in indicated year which requested indicated service.  Sums may exceed 100\\% as service requests can request several services.') %>% 
+  kable_styling(latex_options = c('striped',"condensed", 'hold_position'), full_width = F)
   
 ```
 
@@ -152,7 +158,6 @@ demand %>%
   geom_col(fill = 'light gray', color = 'black')+
   scale_y_continuous(limits = c(0,NA))+
   scale_x_date(date_breaks = '3 months', date_labels = '%Y/%m')+
-  theme(aspect.ratio = 1/1.61)+
   labs(x = 'Date', y = 'Requests in Month')+
   theme(plot.margin=unit(c(1,1,1,1),"cm"))
 ```
@@ -186,7 +191,6 @@ growth %>%
   ggplot(aes(QTR, n)) +
   geom_col(fill = 'light gray', color = 'black') +
   geom_label(aes(label = n)) +
-  theme(aspect.ratio = 1) +
   labs(x = 'Year', y = 'Cumulative DOM Members\nUsing Service')
 ```
 
@@ -243,10 +247,17 @@ requests.total <-
   summarise_all(list(sum)) %>%
   mutate(Division = 'Total')
 
+requests<-
 division.requests.table %>%
-  bind_rows(requests.total) %>%
-  kable(format = 'latex', align = c('r', 'c', 'c', 'c', 'c'))  %>%
-  kable_styling(latex_options = c('striped', 'hold_position'))
+bind_rows(requests.total)
+
+kable(requests,
+      format = 'latex', 
+      align = rep('r', ncol(requests)),
+      booktabs = T,
+      caption = 'Requests for statistical services stratified by division and seniority.') %>% 
+  kable_styling(latex_options = c('striped',"condensed", 'hold_position'), full_width = F)
+  
 ```
 
 
@@ -274,7 +285,7 @@ num.residents <-
 
 ```
 
-We have had `r nrow(repeat.clients)` repeat client(s) (`r num.jr` JR, `r num.mids` MID, `r num.sr` SR) in `r as.integer(current.year)`.  A new SAS form is not required for continuing work on the same study.  We encourage trainees -- post docs, RA/RC -- to attend stats meetings.  A total of `r num.residents$pgy` resident projects were helped by statistical services.
+We have had `r nrow(repeat.clients)` repeat client(s) (`r num.jr` JR, `r num.mids` MID, `r num.sr` SR).  A new SAS form is not required for continuing work on the same study.  We encourage trainees -- post docs, RA/RC -- to attend stats meetings.  A total of `r num.residents$pgy` resident projects were helped by statistical services.
 
 
 ## Grant Reviews Since Program Inception
