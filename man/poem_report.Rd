@@ -4,14 +4,12 @@
 \alias{poem_report}
 \title{Generate template for creating poem report}
 \usage{
-poem_report(report_month, report_year, render = FALSE)
+poem_report(report_month, report_year)
 }
 \arguments{
 \item{report_month}{Month of report}
 
 \item{report_year}{Year of report}
-
-\item{render}{Should the report be rendered automatically? Defaults to `FALSE`}
 }
 \description{
 Opens a template of the poem report for the month, optionally rendering it.

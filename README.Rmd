@@ -45,11 +45,11 @@ This will open a `.R` file which looks like
 
 poemReport::data_cleaning(report_month = "May", report_year = "2020")
 
-poemReport::poem_report(report_month = "May", report_year = "2020", render = FALSE)
+poemReport::poem_report(report_month = "May", report_year = "2020")
 
 ```
 
 
 Running `poemReport::data_cleaning(report_month = "May", report_year = "2020")` opens a cleaning script called `02-data_cleaning.R`.  Analysts are required to point the script towards the appropriate databases in order to analyze them.  The remainder of the script implements analyses for statistical services data.  The analyst is free to add/remove/change any of the analyses as they see fit.
 
-Running `02-data_cleaning.R` will save a copy of the clean data in a `.RDS` file into the working directory.  The report can be created by running `poemReport::poem_report(report_month = "May", report_year = "2020", render = TRUE)`.
+Running `02-data_cleaning.R` will save a copy of the clean data in a `.RDS` file into the working directory.  The report can be created by running `poemReport::poem_report(report_month = "May", report_year = "2020")` and knitting the document.

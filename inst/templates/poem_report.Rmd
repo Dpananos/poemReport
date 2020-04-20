@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
   message = F, #Do not show error messages
   warning = F, #Do not show warnings
   fig.height = 3, #Height of images in inches
-  fig.width = 5, #Width of images in inches
+  fig.width = 8, #Width of images in inches
   fig.align = 'center', #Center the images
   dpi = 400, #Image quality
   cache = F #Cache computations from previous renders
