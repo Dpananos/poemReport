@@ -100,7 +100,7 @@ grt_rvw_cnt <- work %>%
 
 * A total of `r sum(num_access_serv$n)` requests for service have been made since the services inception.  This includes requests for statistical services as well as grant reviews. These requests have been made by  `r num_unique_memb` unique POEM members.
 
-* A total of `r sum(work_hrs_crrnt_yr$hrs)` hours have been used per DOM member in `r current.year` (median `r smmry_wrk_hrs$med` hours per DOM faculty member ), with the number of hours used ranging from `r smmry_wrk_hrs$min` to `r smmry_wrk_hrs$max` per project.
+* A total of `r sum(work_hrs_crrnt_yr$hrs)` hours have been used `r current.year` (median `r smmry_wrk_hrs$med` hours per DOM faculty member ), with the number of hours used ranging from `r smmry_wrk_hrs$min` to `r smmry_wrk_hrs$max` per project.
 
 * `r grt_rvw_cnt$cihr` CIHR review(s) have been conducted. `r grt_rvw_cnt$amoso` AMOSO grant review(s) have been conducted. 
 
